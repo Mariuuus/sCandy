@@ -1,3 +1,4 @@
+import PrinterCard from "@/components/custom/printer-card"
 import {
   Card,
   CardAction,
@@ -18,28 +19,11 @@ export function Navbar() {
   )
 }
 
-export const PrinterInfoCard = () => {
-  return <Card className="w-full">
-    <CardHeader>
-      <CardTitle>Card Title</CardTitle>
-      <CardDescription>Card Description</CardDescription>
-      <CardAction>Card Action</CardAction>
-    </CardHeader>
-    <CardContent>
-      <p>Card Content</p>
-    </CardContent>
-    <CardFooter>
-      <p>Card Footer</p>
-    </CardFooter>
-  </Card>
-}
-
-
 export default function Home() {
   return <>
     <Navbar></Navbar>
     <div className="max-w-4xl w-full self-center">
-      <PrinterInfoCard></PrinterInfoCard>
+      <PrinterCard></PrinterCard>
     </div>
   </>
 }
