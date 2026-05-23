@@ -6,8 +6,10 @@ import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader,
 import { Alert } from "../ui/alert";
 import { Spinner } from "../ui/spinner";
 import { Button } from "../ui/button";
+import { Badge } from "../ui/badge";
+import { Progress } from "../ui/progress";
 
-const PrinterCard = () => {
+const PrinterCard = ({className: classNames} : {className: string}) => {
 
     const [status, setStatus] = useState<PrinterStatus|null>(null);
     const [error, setError] = useState<null|string>(null);
@@ -23,8 +25,12 @@ const PrinterCard = () => {
     }
 
     useEffect(() => {
+        const interval = setInterval(() => {
+            //console.log('This will be called every 10 seconds');
+            fetchStatus();
+        }, 5000);
         fetchStatus();
-        console.log
+        return () => clearInterval(interval);
     },[])
     
     return <>
@@ -32,24 +38,38 @@ const PrinterCard = () => {
             <Alert>{error}</Alert> 
             :
             status ? 
-                <Card className="w-full">
+                <Card className={`w-full ${classNames}`}>
                     <CardHeader>
                         <CardTitle>{status.model}</CardTitle>
-                        <CardDescription>Card Description</CardDescription>
-                        <CardAction>Card Action</CardAction>
+                        <CardDescription>{status.firmware}</CardDescription>
+                        <CardAction>
+                            {
+                                status.isReady ? 
+                                <Badge variant="default" className="bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300">Ready</Badge>
+                                : <Badge variant="secondary">Not Ready/Sleeping</Badge>
+                            }                           
+                        </CardAction>
                     </CardHeader>
-                    <CardContent>
-                        <p>Card Content</p>
+                    <CardContent className="grid grid-cols-4 gap-4">
+                        {...status.ink.map((inkLevel) => <>
+                                <div className="flex flex-col justify-center">
+                                    <h3 className={`font-medium text-${inkLevel.color}`}>{inkLevel.color.at(0)?.toUpperCase() + inkLevel.color.slice(1)}: {inkLevel.percentRemaining}%</h3>
+                                    <Progress value={inkLevel.percentRemaining} className="bg-black/20"  />
+                                </div>
+                            </>
+                        )}
                     </CardContent>
-                    <CardFooter>
+{/*                     <CardFooter>
                         <p>Card Footer</p>
-                    </CardFooter>
+                    </CardFooter> */}
                 </Card>
             :
-            <Button disabled size="sm">
-                <Spinner data-icon="inline-start" />
-                Loading...
-            </Button>
+            <div className={`flex justify-center ${classNames}`}>
+                <Button disabled size="sm">
+                    <Spinner data-icon="inline-start" />
+                    Loading...
+                </Button>
+            </div>
         }
     
         

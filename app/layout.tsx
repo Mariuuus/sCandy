@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { DM_Mono, Fraunces, Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
+import { Navbar } from "./page";
+import PrinterCard from "@/components/custom/printer-card";
 
 const dmMono = DM_Mono({ subsets: ["latin"], variable: "--font-mono", weight: ["300", "400", "500"] });
 
@@ -30,11 +32,15 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={cn("h-full", "antialiased", geistSans.variable, geistMono.variable, "font-mono", dmMono.variable, fraunces.variable)}
+      className={cn("h-full antialiased", geistSans.variable, geistMono.variable, dmMono.variable, fraunces.variable)}
     >
-      <body 
-        className="min-h-full flex flex-col bg-amber-50 align-middle content-start justify-items-center">
-        {children}
+      <body
+        className="min-h-full flex flex-col align-middle content-start justify-items-center px-4">
+          <Navbar></Navbar>
+          <div className="max-w-4xl w-full self-center grid grid-cols-2 gap-4">
+            <PrinterCard className="col-span-2"></PrinterCard>
+            {children}
+          </div>
       </body>
     </html>
   );
