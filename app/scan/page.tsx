@@ -1,10 +1,16 @@
 "use client"
 
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 
 import { useSearchParams } from 'next/navigation'
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+
+const PdfViewer = dynamic(
+    () => import("@/components/custom/pdf-viewer").then(m => m.PdfViewer),
+    { ssr: false }
+);
 
 import {
   Card,
@@ -15,9 +21,9 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { ButtonGroup, ButtonGroupSeparator } from "@/components/ui/button-group";
-import { Download, Edit } from "lucide-react";
+import { Download, Edit, Plus, Upload } from "lucide-react";
 
-const Page = () => {
+const ScanPage = () => {
 
     const [error, setError] = useState<null|string>(null);
     const [url, setUrl] = useState<null|string>(null);
@@ -38,21 +44,36 @@ const Page = () => {
     }
 
     const downloadBlob = async () => {
+        if (!url) return;
+        let downloadUrl = url;
+        let isObjectUrl = false;
+        if (!url.startsWith('blob:')) {
+            const blob = await fetch(url).then(r => r.blob());
+            downloadUrl = URL.createObjectURL(blob);
+            isObjectUrl = true;
+        }
         const a = document.createElement('a')
-        a.href = url
-        a.download = new Date().toISOString().slice(0, 10).replace(/-/g, '_') +'_NAMEME.pdf'
+        a.href = downloadUrl
+        a.download = new Date().toISOString().slice(0, 10).replace(/-/g, '_') + '_NAMEME.pdf'
         a.click()
+        if (isObjectUrl) URL.revokeObjectURL(downloadUrl);
     }
 
     const searchParams = useSearchParams()
  
     const type = searchParams.get('type')
+    const documentUrl = searchParams.get('document')
 
     useEffect(() => {
-        setUrl(null)
         setError(null)
-        startScan();
+        if(!documentUrl && type) {
+            setUrl(null)
+            startScan();
+        } else {
+            setUrl(documentUrl)
+        }
     },[])
+
 
     return <>
         { url == null ? <div className="col-span-2 mt-2"> 
@@ -68,13 +89,16 @@ const Page = () => {
         :
         <>
             <Card className="mx-auto w-full">
-                <CardHeader>
-                    <CardTitle>Document</CardTitle>
+                <CardHeader >
+                    <CardTitle className="text-center">Document</CardTitle>
                 </CardHeader>
+                <CardContent>
+                    <PdfViewer url={url} />
+                </CardContent>
             </Card>
             <Card className="mx-auto w-full">
-                <CardHeader>
-                    <CardTitle>Document Scanned!</CardTitle>
+                <CardHeader className="text-center">
+                    <CardTitle>Actions</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <p className="">
@@ -82,12 +106,19 @@ const Page = () => {
                     </p>
                 </CardContent>
                 <CardFooter>
-                <div className="grid grid-cols-2 w-full">
-                    <Button variant="success" onClick={downloadBlob}>
+                <div className="md:grid md:grid-cols-2 w-full">
+                    <Button variant={"info"} className="w-full">
+                        <Edit></Edit> Edit Pages
+                    </Button>
+                    <Button variant={"info"} className="w-full">
+                        <Plus></Plus> Add Duplex Scan
+                    </Button>
+                    <div className="h-2 col-span-2"></div>
+                    <Button variant="success" onClick={downloadBlob} className="w-full">
                         <Download></Download> Download
                     </Button>
-                    <Button variant={"warning"}>
-                        <Edit></Edit> Edit
+                    <Button variant={"success"} className="w-full" >
+                        <Upload></Upload> Upload to Server
                     </Button>
                 </div>
                 </CardFooter>
@@ -97,4 +128,4 @@ const Page = () => {
     </>
 }
 
-export default Page;
+export default ScanPage;
