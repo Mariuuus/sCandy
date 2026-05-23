@@ -6,6 +6,7 @@ import dynamic from "next/dynamic";
 import { useSearchParams } from 'next/navigation'
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { toast } from "sonner";
 
 const PdfViewer = dynamic(
     () => import("@/components/custom/pdf-viewer").then(m => m.PdfViewer),
@@ -16,17 +17,19 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { ButtonGroup, ButtonGroupSeparator } from "@/components/ui/button-group";
+import { ButtonGroup, ButtonGroupText } from "@/components/ui/button-group";
 import { Download, Edit, Plus, Upload } from "lucide-react";
 
 const ScanPage = () => {
 
     const [error, setError] = useState<null|string>(null);
     const [url, setUrl] = useState<null|string>(null);
+    const [filename, setFilename] = useState('NAME_ME');
+    const [uploading, setUploading] = useState(false);
+    const datePrefix = new Date().toISOString().slice(0, 10).replace(/-/g, '_') + '_';
 
     const startScan = async () => {
         const res = await fetch('/api/scan', {
@@ -54,9 +57,40 @@ const ScanPage = () => {
         }
         const a = document.createElement('a')
         a.href = downloadUrl
-        a.download = new Date().toISOString().slice(0, 10).replace(/-/g, '_') + '_NAMEME.pdf'
+        a.download = datePrefix + filename + '.pdf'
         a.click()
         if (isObjectUrl) URL.revokeObjectURL(downloadUrl);
+    }
+
+    const uploadScan = async (blobUrl: string, name: string) => {
+        const blob = await fetch(blobUrl).then(r => r.blob());
+        const formData = new FormData();
+        formData.append('file', blob, name);
+        formData.append('name', name);
+        const res = await fetch('/api/upload', { method: 'POST', body: formData });
+        return res.json();
+    }
+
+    const handleUpload = async () => {
+        if (!url) return;
+        const intendedName = datePrefix + filename + '.pdf';
+        setUploading(true);
+        try {
+            const data = await uploadScan(url, intendedName);
+            if (data.success) {
+                if (data.filename !== intendedName) {
+                    toast.info(`Saved as "${data.filename}" (name was already taken)`);
+                } else {
+                    toast.success(`Uploaded as "${data.filename}"`);
+                }
+            } else {
+                toast.error(data.error ?? 'Upload failed');
+            }
+        } catch {
+            toast.error('Upload failed — check your connection');
+        } finally {
+            setUploading(false);
+        }
     }
 
     const searchParams = useSearchParams()
@@ -76,54 +110,67 @@ const ScanPage = () => {
 
 
     return <>
-        { url == null ? <div className="col-span-2 mt-2"> 
-            <div className="flex justify-center">
-                <div className="flex flex-col items-center">
-                    <Spinner data-icon="inline-start" />
-                    <span>Scanning</span>
-                    <small>(This can take some time)</small>
+        {url == null
+            ? <div className="col-span-2 flex flex-col items-center justify-center gap-3 py-20">
+                <Spinner />
+                <div className="text-center">
+                    <p className="text-sm font-medium">Scanning document…</p>
+                    <p className="text-xs text-muted-foreground">This can take a moment</p>
                 </div>
             </div>
-        </div>
 
-        :
-        <>
-            <Card className="mx-auto w-full">
-                <CardHeader >
-                    <CardTitle className="text-center">Document</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <PdfViewer url={url} />
-                </CardContent>
-            </Card>
-            <Card className="mx-auto w-full">
-                <CardHeader className="text-center">
-                    <CardTitle>Actions</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <p className="">
-                        You can now easily download the document or edit it.
-                    </p>
-                </CardContent>
-                <CardFooter>
-                <div className="md:grid md:grid-cols-2 w-full">
-                    <Button variant={"info"} className="w-full">
-                        <Edit></Edit> Edit Pages
-                    </Button>
-                    <Button variant={"info"} className="w-full">
-                        <Plus></Plus> Add Duplex Scan
-                    </Button>
-                    <div className="h-2 col-span-2"></div>
-                    <Button variant="success" onClick={downloadBlob} className="w-full">
-                        <Download></Download> Download
-                    </Button>
-                    <Button variant={"success"} className="w-full" >
-                        <Upload></Upload> Upload to Server
-                    </Button>
-                </div>
-                </CardFooter>
-            </Card>
-        </>
+            : <>
+                <Card className="mx-auto w-full overflow-hidden">
+                    <CardHeader className="border-b px-4 py-3">
+                        <CardTitle className="text-sm">Preview</CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                        <PdfViewer url={url} />
+                    </CardContent>
+                </Card>
+
+                <Card className="mx-auto w-full">
+                    <CardHeader className="border-b px-4 py-3">
+                        <CardTitle className="text-sm">Actions</CardTitle>
+                        <CardDescription>Manage your scanned document</CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex flex-col gap-6 px-4">
+                        <div className="flex flex-col gap-2">
+                            <p className="text-xs font-medium  tracking-wide text-muted-foreground">Edit</p>
+                            <div className="grid grid-cols-2 gap-2">
+                                <Button variant="info" size="sm" className="w-full">
+                                    <Edit /> Edit Pages
+                                </Button>
+                                <Button variant="info" size="sm" className="w-full">
+                                    <Plus /> Add Duplex
+                                </Button>
+                            </div>
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                            <p className="text-xs font-medium  tracking-wide text-muted-foreground">Export</p>
+                            <ButtonGroup className="w-full">
+                                <ButtonGroupText className="shrink-0">{datePrefix}</ButtonGroupText>
+                                <input
+                                    value={filename}
+                                    onChange={e => setFilename(e.target.value)}
+                                    className="min-w-0 flex-1 border border-input bg-background px-2.5 py-2 text-xs font-medium focus-visible:border-ring"
+                                />
+                                <ButtonGroupText>.pdf</ButtonGroupText>
+                            </ButtonGroup>
+                            <div className="grid grid-cols-2 gap-2">
+                                <Button variant="success" size="sm" onClick={downloadBlob} className="w-full">
+                                    <Download /> Download
+                                </Button>
+                                <Button variant="success" size="sm" className="w-full" onClick={handleUpload} disabled={uploading}>
+                                    <Upload /> {uploading ? 'Uploading…' : 'Upload'}
+                                </Button>
+                            </div>
+                        </div>
+
+                    </CardContent>
+                </Card>
+            </>
         }
     </>
 }
