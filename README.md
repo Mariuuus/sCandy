@@ -1,36 +1,69 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# sCandy — Scanner App
 
-## Getting Started
+A Next.js web app for scanning documents, editing PDFs, and uploading them to Nextcloud.
 
-First, run the development server:
+## Running with Docker
+
+### 1. Pull the image
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+docker pull ghcr.io/Mariuuus/sCandy:latest
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Configure environment
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Copy `example.env` and fill in your values:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+cp example.env .env
+```
 
-## Learn More
+| Variable           | Description                              |
+|--------------------|------------------------------------------|
+| `PRINTER_IP_ADRESSE` | IP address of your network scanner/printer |
+| `PRINTER_URL`      | Base URL of the printer (auto-set from IP) |
+| `NEXTCLOUD_HOST`   | Hostname or IP of your Nextcloud instance |
+| `NEXTCLOUD_USER`   | Nextcloud username                       |
+| `NEXTCLOUD_PASS`   | Nextcloud password                       |
+| `NEXTCLOUD_FOLDER` | Target folder for uploaded scans         |
 
-To learn more about Next.js, take a look at the following resources:
+### 3. Run the container
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+docker run -d \
+  --name scandy \
+  --env-file .env \
+  -p 3000:3000 \
+  ghcr.io/Mariuuus/sCandy:latest
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-## Deploy on Vercel
+### Docker Compose example
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```yaml
+services:
+  scandy:
+    image: ghcr.io/Mariuuus/sCandy:latest
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+docker compose up -d
+```
+
+## Building the image locally
+
+```bash
+docker build -t scandy .
+docker run -d --env-file .env -p 3000:3000 scandy
+```
+
+## Publishing a new release
+
+Trigger the **"Build and publish Docker image"** workflow manually from the GitHub Actions tab.
+Enter the desired version (e.g. `1.2.0`) — the workflow tags the image with both that version and `latest`.

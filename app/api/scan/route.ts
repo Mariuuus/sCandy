@@ -77,7 +77,7 @@ export async function POST(req: Request) {
       method: 'DELETE',
     }).catch(() => {}); // fire and forget
 
-    return new Response(pdf.buffer, {
+    return new Response(pdf.buffer.buffer as ArrayBuffer, {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="scan-${Date.now()}.pdf"`,

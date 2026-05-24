@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -24,7 +24,7 @@ import { ButtonGroup, ButtonGroupText } from "@/components/ui/button-group";
 import { Download, Edit, Plus, Upload } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
-const ScanPage = () => {
+const ScanPageInner = () => {
 
     const [error, setError] = useState<null|string>(null);
     const [url, setUrl] = useState<null|string>(null);
@@ -182,5 +182,11 @@ const ScanPage = () => {
         }
     </>
 }
+
+const ScanPage = () => (
+    <Suspense>
+        <ScanPageInner />
+    </Suspense>
+);
 
 export default ScanPage;

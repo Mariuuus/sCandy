@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PDFDocument } from "pdf-lib";
@@ -14,7 +14,7 @@ const PdfEditor = dynamic(
     { ssr: false }
 );
 
-const EditPage = () => {
+const EditPageInner = () => {
     const searchParams = useSearchParams();
     const router = useRouter();
     const pdfUrl = searchParams.get('document');
@@ -69,5 +69,11 @@ const EditPage = () => {
         </Card>
     );
 }
+
+const EditPage = () => (
+    <Suspense>
+        <EditPageInner />
+    </Suspense>
+);
 
 export default EditPage;
