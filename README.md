@@ -7,7 +7,7 @@ A Next.js web app for scanning documents, editing PDFs, and uploading them to Ne
 ### 1. Pull the image
 
 ```bash
-docker pull ghcr.io/Mariuuus/sCandy:latest
+docker pull ghcr.io/mariuuus/scandy:latest
 ```
 
 ### 2. Configure environment
@@ -34,7 +34,7 @@ docker run -d \
   --name scandy \
   --env-file .env \
   -p 3000:3000 \
-  ghcr.io/Mariuuus/sCandy:latest
+  ghcr.io/mariuuus/scandy:latest
 ```
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
@@ -44,7 +44,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ```yaml
 services:
   scandy:
-    image: ghcr.io/Mariuuus/sCandy:latest
+    image: ghcr.io/mariuuus/scandy:latest
     restart: unless-stopped
     ports:
       - "3000:3000"
