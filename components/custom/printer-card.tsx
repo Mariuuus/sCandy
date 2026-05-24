@@ -52,16 +52,17 @@ const PrinterCard = ({className: classNames} : {className: string}) => {
                     </CardHeader>
                     <CardContent className="grid grid-cols-4 gap-4">
                         {...status.ink.map((inkLevel) => <>
-                                <div className="flex flex-col justify-center">
-                                    <h3 className={`font-medium text-${inkLevel.color}`}>{inkLevel.color.at(0)?.toUpperCase() + inkLevel.color.slice(1)}: {inkLevel.percentRemaining}%</h3>
-                                    <Progress value={inkLevel.percentRemaining} className="bg-black/20"  />
+                                <div className="flex flex-col justify-center text-center">
+                                    <h3 className={`font-medium `}>{inkLevel.color.at(0)?.toUpperCase() + inkLevel.color.slice(1)}: {inkLevel.percentRemaining}%</h3>
+                                    <Progress
+                                        value={inkLevel.percentRemaining}
+                                        className="bg-black/20 rounded-3xl"
+                                        indicatorStyle={{ backgroundColor: `color-mix(in srgb, rgb(${inkLevel.rgb.join(',')}) 90%, black)`, }}
+                                    />
                                 </div>
                             </>
                         )}
                     </CardContent>
-{/*                     <CardFooter>
-                        <p>Card Footer</p>
-                    </CardFooter> */}
                 </Card>
             :
             <div className={`flex justify-center ${classNames}`}>

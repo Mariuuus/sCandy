@@ -1,17 +1,6 @@
 "use client"
 
-import PrinterCard from "@/components/custom/printer-card"
-import { EinzugIcon, GlasIcon } from "@/components/custom/scanner-icons"
 import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
 import { File, FileStack } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { ReactNode } from "react"
@@ -38,7 +27,7 @@ export function BigIconButton({children, href} : {children: ReactNode, href: str
 
 
 export default function Home() {
-  return <>
+  return <div className="md:col-span-2 grid grid-cols-2 mt-4">
       <BigIconButton href="/scan?type=Feeder">
         <FileStack  className="size-6" />
         Scan from "Einzug"
@@ -47,6 +36,6 @@ export default function Home() {
         <File  className="size-6"/>
         Scan from "Glas"
       </BigIconButton>
-  </>
+  </div>
 }
 

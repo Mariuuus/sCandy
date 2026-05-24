@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 
-import { useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
@@ -29,6 +29,7 @@ const ScanPage = () => {
     const [url, setUrl] = useState<null|string>(null);
     const [filename, setFilename] = useState('NAME_ME');
     const [uploading, setUploading] = useState(false);
+    const router = useRouter();
     const datePrefix = new Date().toISOString().slice(0, 10).replace(/-/g, '_') + '_';
 
     const startScan = async () => {
@@ -37,29 +38,20 @@ const ScanPage = () => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ source: type }),
         });
-        if(res.ok) {
+        if (res.ok) {
             const blob = await res.blob();
-            const url = URL.createObjectURL(blob);
-            setUrl(url)
+            setUrl(URL.createObjectURL(blob));
         } else {
-            setError((await res.json()).error)
+            setError((await res.json()).error);
         }
     }
 
-    const downloadBlob = async () => {
+    const downloadBlob = () => {
         if (!url) return;
-        let downloadUrl = url;
-        let isObjectUrl = false;
-        if (!url.startsWith('blob:')) {
-            const blob = await fetch(url).then(r => r.blob());
-            downloadUrl = URL.createObjectURL(blob);
-            isObjectUrl = true;
-        }
         const a = document.createElement('a')
-        a.href = downloadUrl
+        a.href = url
         a.download = datePrefix + filename + '.pdf'
         a.click()
-        if (isObjectUrl) URL.revokeObjectURL(downloadUrl);
     }
 
     const uploadScan = async (blobUrl: string, name: string) => {
@@ -98,13 +90,19 @@ const ScanPage = () => {
     const type = searchParams.get('type')
     const documentUrl = searchParams.get('document')
 
+    const loadAsBlob = (src: string) =>
+        fetch(src)
+            .then(r => r.blob())
+            .then(blob => setUrl(URL.createObjectURL(blob)))
+            .catch(() => setError('Failed to load document'));
+
     useEffect(() => {
         setError(null)
-        if(!documentUrl && type) {
+        if (!documentUrl && type) {
             setUrl(null)
             startScan();
-        } else {
-            setUrl(documentUrl)
+        } else if (documentUrl) {
+            loadAsBlob(documentUrl);
         }
     },[])
 
@@ -118,7 +116,6 @@ const ScanPage = () => {
                     <p className="text-xs text-muted-foreground">This can take a moment</p>
                 </div>
             </div>
-
             : <>
                 <Card className="mx-auto w-full overflow-hidden">
                     <CardHeader className="border-b px-4 py-3">
@@ -138,7 +135,7 @@ const ScanPage = () => {
                         <div className="flex flex-col gap-2">
                             <p className="text-xs font-medium  tracking-wide text-muted-foreground">Edit</p>
                             <div className="grid grid-cols-2 gap-2">
-                                <Button variant="info" size="sm" className="w-full">
+                                <Button variant="info" size="sm" className="w-full" onClick={() => url && router.push('/scan/edit?document=' + encodeURIComponent(url))}>
                                     <Edit /> Edit Pages
                                 </Button>
                                 <Button variant="info" size="sm" className="w-full">
