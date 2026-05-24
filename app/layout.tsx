@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { Navbar } from "./page";
 import PrinterCard from "@/components/custom/printer-card";
 import { Toaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const dmMono = DM_Mono({ subsets: ["latin"], variable: "--font-mono", weight: ["300", "400", "500"] });
 
@@ -37,12 +38,14 @@ export default function RootLayout({
     >
       <body
         className="min-h-full flex flex-col align-middle content-start justify-items-center px-4">
-          <Navbar></Navbar>
-          <div className="max-w-4xl w-full self-center  md:grid md:grid-cols-2 grid-cols-1 gap-4">
-            <PrinterCard className="col-span-2"></PrinterCard>
-            {children}
-          </div>
-          <Toaster />
+          <TooltipProvider>
+            <Navbar></Navbar>
+            <div className="max-w-4xl w-full self-center  md:grid md:grid-cols-2 grid-cols-1 gap-4">
+              <PrinterCard className="col-span-2"></PrinterCard>
+              {children}
+            </div>
+            <Toaster />
+          </TooltipProvider>
       </body>
     </html>
   );

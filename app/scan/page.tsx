@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/card"
 import { ButtonGroup, ButtonGroupText } from "@/components/ui/button-group";
 import { Download, Edit, Plus, Upload } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const ScanPage = () => {
 
@@ -138,9 +139,19 @@ const ScanPage = () => {
                                 <Button variant="info" size="sm" className="w-full" onClick={() => url && router.push('/scan/edit?document=' + encodeURIComponent(url))}>
                                     <Edit /> Edit Pages
                                 </Button>
-                                <Button variant="info" size="sm" className="w-full">
-                                    <Plus /> Add Duplex
-                                </Button>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <span className="inline-flex w-full cursor-not-allowed">
+                                            <Button variant="info" size="sm" className="w-full pointer-events-none" disabled>
+                                                <Plus /> Add Duplex
+                                            </Button>
+                                        </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>Coming Soon</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                                
                             </div>
                         </div>
 
