@@ -2,6 +2,15 @@
 
 A Next.js web app for scanning documents, editing PDFs, and uploading them to Nextcloud.
 
+> Waiting for a scan to finish
+![screenshot of webapp, waiting for a scan to finish](docs/screenshot_scanning.png)
+
+> Results page
+![screenshot of webapp, showing results page](docs/screenshot_results.png)
+
+> Edit page
+![screenshot of webapp, showing edit page](docs/screenshot_edit.png)
+
 ## Running with Docker
 
 ### 1. Pull the image
