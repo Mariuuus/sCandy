@@ -3,7 +3,10 @@ import http from 'http';
 import { XMLParser } from 'fast-xml-parser';
 import type { ScanSource, ScannerCapabilities, ScanSourceCaps } from '@/types/printer';
 
-const parser = new XMLParser({ ignoreAttributes: true });
+const parser = new XMLParser({
+  ignoreAttributes: true,
+  isArray: (name) => ['scan:SettingProfile', 'scan:DiscreteResolution'].includes(name),
+});
 
 // ── HTTP ─────────────────────────────────────────────────────────────────────
 
@@ -36,12 +39,44 @@ export function printerRequest(options: http.RequestOptions, body?: string): Pro
 // The printer rejects jobs with a version it doesn't know (409 Conflict), so we
 // read what it supports instead of hardcoding per model.
 
+const COMMON_RESOLUTIONS = [75, 100, 150, 200, 300, 600, 1200];
+
+// Scanners list resolutions either as discrete values or as a range. Only
+// square resolutions (X == Y) are offered, since that is what users expect.
+function parseResolutions(input: Record<string, unknown>): number[] {
+  const found = new Set<number>();
+  const profiles = (input['scan:SettingProfiles'] as Record<string, unknown> | undefined)?.['scan:SettingProfile'] as unknown[] ?? [];
+
+  for (const profile of profiles) {
+    const supported = (profile as Record<string, Record<string, unknown>>)?.['scan:SupportedResolutions'];
+    if (!supported) continue;
+
+    const discrete = (supported['scan:DiscreteResolutions'] as Record<string, unknown> | undefined)?.['scan:DiscreteResolution'] as Record<string, unknown>[] ?? [];
+    for (const r of discrete) {
+      const x = Number(r['scan:XResolution']);
+      if (x > 0 && x === Number(r['scan:YResolution'])) found.add(x);
+    }
+
+    const range = supported['scan:ResolutionRange'] as Record<string, Record<string, unknown>> | undefined;
+    if (range) {
+      const min = Math.max(Number(range['scan:XResolutionRange']?.['scan:Min']), Number(range['scan:YResolutionRange']?.['scan:Min']));
+      const max = Math.min(Number(range['scan:XResolutionRange']?.['scan:Max']), Number(range['scan:YResolutionRange']?.['scan:Max']));
+      COMMON_RESOLUTIONS.filter((r) => r >= min && r <= max).forEach((r) => found.add(r));
+    }
+  }
+
+  return [...found].sort((a, b) => a - b);
+}
+
 function parseSourceCaps(caps: unknown): ScanSourceCaps | null {
   if (caps == null || typeof caps !== 'object') return null;
   const c = caps as Record<string, unknown>;
+  const resolutions = parseResolutions(c);
   return {
     maxWidth: Number(c['scan:MaxWidth']) || 2550,
     maxHeight: Number(c['scan:MaxHeight']) || 3508,
+    // every eSCL scanner supports 300 dpi, fall back to it if none were listed
+    resolutions: resolutions.length ? resolutions : [300],
   };
 }
 

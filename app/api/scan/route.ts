@@ -6,10 +6,12 @@ import type { ScanSource, ScanSourceCaps } from '@/types/printer';
 const A4_WIDTH = 2481;
 const A4_HEIGHT = 3507;
 
-function buildScanXml(source: ScanSource, version: string, caps: ScanSourceCaps) {
+const DEFAULT_DPI = 300;
+
+function buildScanXml(source: ScanSource, version: string, caps: ScanSourceCaps, dpi: number) {
   const width = Math.min(A4_WIDTH, caps.maxWidth);
   const height = Math.min(A4_HEIGHT, caps.maxHeight);
-  return `<?xml version="1.0" encoding="UTF-8"?><scan:ScanSettings xmlns:scan="http://schemas.hp.com/imaging/escl/2011/05/03" xmlns:pwg="http://www.pwg.org/schemas/2010/12/sm"><pwg:Version>${version}</pwg:Version><scan:Intent>Document</scan:Intent><pwg:ScanRegions><pwg:ScanRegion><pwg:Height>${height}</pwg:Height><pwg:Width>${width}</pwg:Width><pwg:XOffset>0</pwg:XOffset><pwg:YOffset>0</pwg:YOffset></pwg:ScanRegion></pwg:ScanRegions><pwg:InputSource>${source}</pwg:InputSource><scan:DocumentFormatExt>application/pdf</scan:DocumentFormatExt><scan:XResolution>300</scan:XResolution><scan:YResolution>300</scan:YResolution><scan:ColorMode>RGB24</scan:ColorMode><scan:CompressionFactor>25</scan:CompressionFactor><scan:Brightness>1000</scan:Brightness><scan:Contrast>1000</scan:Contrast></scan:ScanSettings>`;
+  return `<?xml version="1.0" encoding="UTF-8"?><scan:ScanSettings xmlns:scan="http://schemas.hp.com/imaging/escl/2011/05/03" xmlns:pwg="http://www.pwg.org/schemas/2010/12/sm"><pwg:Version>${version}</pwg:Version><scan:Intent>Document</scan:Intent><pwg:ScanRegions><pwg:ScanRegion><pwg:Height>${height}</pwg:Height><pwg:Width>${width}</pwg:Width><pwg:XOffset>0</pwg:XOffset><pwg:YOffset>0</pwg:YOffset></pwg:ScanRegion></pwg:ScanRegions><pwg:InputSource>${source}</pwg:InputSource><scan:DocumentFormatExt>application/pdf</scan:DocumentFormatExt><scan:XResolution>${dpi}</scan:XResolution><scan:YResolution>${dpi}</scan:YResolution><scan:ColorMode>RGB24</scan:ColorMode><scan:CompressionFactor>25</scan:CompressionFactor><scan:Brightness>1000</scan:Brightness><scan:Contrast>1000</scan:Contrast></scan:ScanSettings>`;
 }
 
 // The scanner answers 503 while it is still busy (e.g. the head returning
@@ -31,7 +33,7 @@ async function createJob(body: string) {
 
 export async function POST(req: Request) {
   try {
-    const { source = 'Platen' } = await req.json() as { source?: ScanSource };
+    const { source = 'Platen', dpi = DEFAULT_DPI } = await req.json() as { source?: ScanSource, dpi?: number };
 
     if (source !== 'Platen' && source !== 'Feeder') {
       return Response.json({ error: 'Invalid source. Use "Platen" or "Feeder"' }, { status: 400 });
@@ -44,7 +46,13 @@ export async function POST(req: Request) {
       return Response.json({ error: `${caps.model || 'This printer'} has no ${name}` }, { status: 400 });
     }
 
-    const body = buildScanXml(source, caps.version, inputCaps);
+    if (!inputCaps.resolutions.includes(dpi)) {
+      return Response.json({
+        error: `${dpi} dpi is not supported. Choose one of: ${inputCaps.resolutions.join(', ')}`,
+      }, { status: 400 });
+    }
+
+    const body = buildScanXml(source, caps.version, inputCaps, dpi);
 
     // 1. Create scan job
     const job = await createJob(body);
