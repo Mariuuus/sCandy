@@ -65,7 +65,11 @@ const COLOR_MAP: Record<string, InkLevel['color']> = {
   C: 'cyan',
   Y: 'yellow',
   K: 'black',
+  CMY: 'tricolor', // single tri-color cartridge, e.g. HP 302 in the ENVY 4520
 };
+
+// OfficeJet Pro 8022 reports "ink", ENVY 4520 reports "inkCartridge"
+const INK_TYPES = ['ink', 'inkCartridge'];
 
 function parseConsumableXml(xml: string): InkLevel[] {
   const doc = parser.parse(xml);
@@ -73,9 +77,9 @@ function parseConsumableXml(xml: string): InkLevel[] {
   const consumables: unknown[] = root['ccdyn:ConsumableInfo'] ?? [];
 
   return consumables
-    .filter((c) => str(c, 'dd:ConsumableTypeEnum') === 'ink')
+    .filter((c) => INK_TYPES.includes(str(c, 'dd:ConsumableTypeEnum')))
     .map((c) => {
-      const labelCode = str(c, 'dd:ConsumableLabelCode'); // M, C, Y, K
+      const labelCode = str(c, 'dd:ConsumableLabelCode'); // M, C, Y, K, CMY
       const maxRaw = num(c, 'dd:Capacity', 'dd:MaxCapacity');
 
       const iconR = num(c, 'dd:ConsumableIcon', 'dd:FillColor', 'dd:Red');

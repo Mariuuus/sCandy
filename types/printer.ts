@@ -10,8 +10,8 @@ export interface PrinterAlert {
 }
 
 export interface InkLevel {
-  color: 'magenta' | 'cyan' | 'yellow' | 'black';
-  label: string;           // M, C, Y, K
+  color: 'magenta' | 'cyan' | 'yellow' | 'black' | 'tricolor';
+  label: string;           // M, C, Y, K, CMY
   percentRemaining: number;
   maxCapacityMl: number;   // converted from tenthsOfMilliliters
   cartridgeNumber: string; // e.g. "912XL"
@@ -31,4 +31,19 @@ export interface PrinterStatus {
   duplexInstalled: boolean;
   duplexEnabled: boolean;
   timestamp: string;
+}
+
+export type ScanSource = 'Platen' | 'Feeder';
+
+export interface ScanSourceCaps {
+  maxWidth: number;  // in 1/300 inch
+  maxHeight: number; // in 1/300 inch
+}
+
+export interface ScannerCapabilities {
+  version: string;               // eSCL version the scanner speaks, e.g. "2.5"
+  model: string;
+  platen: ScanSourceCaps | null; // scanner glass ("Glas")
+  feeder: ScanSourceCaps | null; // automatic document feeder ("Einzug")
+  feederDuplex: boolean;
 }
