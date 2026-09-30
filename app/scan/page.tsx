@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
+import { PDFDocument } from "pdf-lib";
 
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,30 @@ import {
 import { ButtonGroup, ButtonGroupText } from "@/components/ui/button-group";
 import { Download, Edit, Plus, Upload } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { AppendScanDialog } from "@/components/custom/append-scan-dialog";
+import type { ScanSource } from "@/types/printer";
+
+async function requestScan(source: ScanSource, dpi?: number): Promise<Blob> {
+    const res = await fetch('/api/scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ source, dpi }),
+    });
+    if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error ?? 'Scan failed');
+    }
+    return res.blob();
+}
+
+async function mergePdfs(first: Blob, second: Blob): Promise<Blob> {
+    const merged = await PDFDocument.load(await first.arrayBuffer());
+    const appended = await PDFDocument.load(await second.arrayBuffer());
+    const pages = await merged.copyPages(appended, appended.getPageIndices());
+    pages.forEach(page => merged.addPage(page));
+    const bytes = await merged.save();
+    return new Blob([bytes.buffer as ArrayBuffer], { type: 'application/pdf' });
+}
 
 const ScanPageInner = () => {
 
@@ -34,16 +59,28 @@ const ScanPageInner = () => {
     const datePrefix = new Date().toISOString().slice(0, 10).replace(/-/g, '_') + '_';
 
     const startScan = async () => {
-        const res = await fetch('/api/scan', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ source: type, dpi: Number(dpi) || undefined }),
-        });
-        if (res.ok) {
-            const blob = await res.blob();
+        try {
+            const blob = await requestScan(type as ScanSource, Number(dpi) || undefined);
             setUrl(URL.createObjectURL(blob));
-        } else {
-            setError((await res.json()).error);
+        } catch (err) {
+            setError((err as Error).message);
+        }
+    }
+
+    // Errors are shown here and re-thrown so the dialog stays open
+    const appendScan = async (source: ScanSource, scanDpi: number) => {
+        if (!url) return;
+        try {
+            const [current, scanned] = await Promise.all([
+                fetch(url).then(r => r.blob()),
+                requestScan(source, scanDpi),
+            ]);
+            const merged = await mergePdfs(current, scanned);
+            setUrl(URL.createObjectURL(merged));
+            toast.success('Scan appended');
+        } catch (err) {
+            toast.error((err as Error).message || 'Append failed');
+            throw err;
         }
     }
 
@@ -136,7 +173,7 @@ const ScanPageInner = () => {
                     <CardContent className="flex flex-col gap-6 px-4">
                         <div className="flex flex-col gap-2">
                             <p className="text-xs font-medium  tracking-wide text-muted-foreground">Edit</p>
-                            <div className="grid grid-cols-2 gap-2">
+                            <div className="grid grid-cols-3 gap-2">
                                 <Button variant="info" size="sm" className="w-full" onClick={() => url && router.push('/scan/edit?document=' + encodeURIComponent(url))}>
                                     <Edit /> Edit Pages
                                 </Button>
@@ -152,6 +189,11 @@ const ScanPageInner = () => {
                                         <p>Coming Soon</p>
                                     </TooltipContent>
                                 </Tooltip>
+                                <AppendScanDialog
+                                    onScan={appendScan}
+                                    defaultSource={type === 'Feeder' ? 'Feeder' : 'Platen'}
+                                    defaultDpi={Number(dpi) || undefined}
+                                />
                                 
                             </div>
                         </div>
