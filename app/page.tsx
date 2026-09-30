@@ -5,15 +5,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import type { ScannerCapabilities } from "@/types/printer"
 import { File, FileStack } from "lucide-react"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { ReactNode, useEffect, useState } from "react"
 
 export function Navbar() {
   return (
     <div className="m-5 mb-10 text-center ">
-      <h1>
-        sCandy
-      </h1>
+      <Link href="/">
+        <h1>
+          sCandy
+        </h1>
+      </Link>
     </div>
   )
 }
