@@ -38,6 +38,7 @@ export type ScanSource = 'Platen' | 'Feeder';
 export interface ScanSourceCaps {
   maxWidth: number;  // in 1/300 inch
   maxHeight: number; // in 1/300 inch
+  resolutions: number[]; // supported DPI, ascending
 }
 
 export interface ScannerCapabilities {

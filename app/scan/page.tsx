@@ -37,7 +37,7 @@ const ScanPageInner = () => {
         const res = await fetch('/api/scan', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ source: type }),
+            body: JSON.stringify({ source: type, dpi: Number(dpi) || undefined }),
         });
         if (res.ok) {
             const blob = await res.blob();
@@ -89,6 +89,7 @@ const ScanPageInner = () => {
     const searchParams = useSearchParams()
  
     const type = searchParams.get('type')
+    const dpi = searchParams.get('dpi')
     const documentUrl = searchParams.get('document')
 
     const loadAsBlob = (src: string) =>
