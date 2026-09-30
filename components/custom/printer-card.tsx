@@ -57,7 +57,9 @@ const PrinterCard = ({className: classNames} : {className: string}) => {
                                     <Progress
                                         value={inkLevel.percentRemaining}
                                         className="bg-black/20 rounded-3xl"
-                                        indicatorStyle={{ backgroundColor: `color-mix(in srgb, rgb(${inkLevel.rgb.join(',')}) 90%, black)`, }}
+                                        indicatorStyle={inkLevel.color === 'tricolor'
+                                            ? { background: 'linear-gradient(to right, #00aeef, #ec008c, #fff200)' }
+                                            : { backgroundColor: `color-mix(in srgb, rgb(${inkLevel.rgb.join(',')}) 90%, black)`, }}
                                     />
                                 </div>
                             </>
